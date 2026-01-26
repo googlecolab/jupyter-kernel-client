@@ -94,14 +94,14 @@ def deserialize_msg_from_ws_default(ws_msg):
     if isinstance(ws_msg, str):
         return json.loads(ws_msg.encode('utf-8'))
     else:
-        nbufs = int.from_bytes(ws_msg[:4], "big")
+        nbufs = int.from_bytes(ws_msg[:4], byteorder="big")
         offsets = []
         if nbufs < 2:
             raise ValueError("unsupported number of buffers")
 
         for i in range(nbufs):
             start = 4 * (i + 1)
-            off = int.from_bytes(ws_msg[start:start+4])
+            off = int.from_bytes(ws_msg[start:start+4], byteorder="big")
             offsets.append(off)
 
         json_start = offsets[0]
