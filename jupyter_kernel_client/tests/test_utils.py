@@ -68,13 +68,13 @@ def test_serialize_and_deserialize_msg_to_ws_default():
     }
 
     serialized_msg = serialize_msg_to_ws_default(src_msg)
-    bufn = int.from_bytes(serialized_msg[0:4])
+    bufn = int.from_bytes(serialized_msg[0:4], byteorder="big")
     buffers = src_msg['buffers'] or []
 
     for i in range(1, bufn):
         # ignore the json message for now, it's tested the deserialized msg
         start = (i+1) * 4
-        offset = int.from_bytes(serialized_msg[start:start+4])
+        offset = int.from_bytes(serialized_msg[start:start+4], byteorder="big")
         buf = buffers[i-1]
         serialized_buf_val = serialized_msg[offset:offset+len(buf)]
         assert serialized_buf_val == buf
