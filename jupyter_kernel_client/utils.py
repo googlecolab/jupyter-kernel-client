@@ -76,11 +76,11 @@ def serialize_msg_to_ws_default(msg):
     total_size = offsets[-1] + len(buffers[-1])
     msg_buf = bytearray(total_size)
 
-    msg_buf[0:4] = nbufs.to_bytes(4)
+    msg_buf[0:4] = nbufs.to_bytes(4, byteorder="big")
 
     for i, off in enumerate(offsets):
         start = 4 * (i + 1)
-        msg_buf[start:start+4] = off.to_bytes(4)
+        msg_buf[start:start+4] = off.to_bytes(4, byteorder="big")
 
     for i, b in enumerate(buffers):
         start = offsets[i]
