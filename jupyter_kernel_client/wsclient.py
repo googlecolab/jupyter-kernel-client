@@ -53,7 +53,7 @@ class WSSession(Session):
 
     def __init__(self,
                  log: logging.Logger | None = None,
-                 subprotocol: JupyterSubprotocol | None = JupyterSubprotocol.DEFAULT,
+                 subprotocol: JupyterSubprotocol | None = JupyterSubprotocol.V1,
                  **kwargs):
         super().__init__(**kwargs)
         self.log = log or get_logger()
@@ -249,15 +249,22 @@ class WSSession(Session):
         to_send = self.serialize(msg)
         to_send.extend(buffers)
 
-        if self.subprotocol == JupyterSubprotocol.DEFAULT:
+        if self.subprotocol == JupyterSubprotocol.V1:
+            stream.send_bytes(serialize_msg_to_ws_v1(to_send, channel))
+        else:
+            # The Default protocol is a bytearray with a header pointing to 
+            # offsets where buffers are appended.
+            #
+            # Buffers are namely added for cases such as comm messages.
+            # In the case of the common message without a buffers list, the
+            # headers will always be '\x00\x00\x00\x01\x00\x00\x00\x08'.
+            # Since this is constant it might as well not be included, which is 
+            # what Jupyter is doing with the default protocol.
+            # [server code found here](https://github.com/jupyter-server/jupyter_server/blob/main/jupyter_server/services/kernels/connection/channels.py#L445-L464)
             if 'buffers' in msg and len(msg['buffers']) > 0:
                 stream.send_bytes(serialize_msg_to_ws_default(msg))
             else:
                 stream.send_text(serialize_msg_to_ws_json(msg))
-        elif self.subprotocol == JupyterSubprotocol.V1:
-            stream.send_bytes(serialize_msg_to_ws_v1(to_send, channel))
-        else:
-            raise ValueError("unsupported protocol.")
 
         self.log.debug("WSSession.send\n%s\n%s\n%s", msg, to_send, buffers)
 
@@ -488,7 +495,7 @@ class KernelWebSocketClient(KernelClientABC):
         debug_session: bool = False,
         ping_interval: float = 60,
         reconnect_interval: int = 0,
-        subprotocol: JupyterSubprotocol | None = JupyterSubprotocol.DEFAULT,
+        subprotocol: JupyterSubprotocol | None = JupyterSubprotocol.V1,
         **kwargs,
     ):
         """Initialize the kernel client."""
