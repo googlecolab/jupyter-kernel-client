@@ -20,7 +20,7 @@ from getpass import getpass
 from threading import Event, Lock, Thread
 from urllib.parse import urlencode
 
-import websocket  # type:ignore[import-untyped]
+import websocket  # type: ignore[import-untyped]
 from jupyter_client.adapter import adapt
 from jupyter_client.channels import major_protocol_version
 from jupyter_client.channelsabc import ChannelABC, HBChannelABC
@@ -31,7 +31,13 @@ from jupyter_client.session import Message, Session
 
 from jupyter_kernel_client.constants import REQUEST_TIMEOUT
 from jupyter_kernel_client.log import get_logger
-from jupyter_kernel_client.utils import deserialize_msg_from_ws_v1, serialize_msg_to_ws_v1, deserialize_msg_from_ws_default, serialize_msg_to_ws_json, serialize_msg_to_ws_default
+from jupyter_kernel_client.utils import (
+    deserialize_msg_from_ws_v1,
+    serialize_msg_to_ws_v1,
+    deserialize_msg_from_ws_default,
+    serialize_msg_to_ws_json,
+    serialize_msg_to_ws_default,
+)
 
 
 class JupyterSubprotocol(Enum):
@@ -51,18 +57,19 @@ class JupyterSubprotocol(Enum):
 class WSSession(Session):
     """WebSocket session."""
 
-    def __init__(self,
-                 log: logging.Logger | None = None,
-                 subprotocol: JupyterSubprotocol | None = JupyterSubprotocol.V1,
-                 **kwargs):
+    def __init__(
+        self,
+        log: logging.Logger | None = None,
+        subprotocol: JupyterSubprotocol | None = JupyterSubprotocol.V1,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
         self.log = log or get_logger()
         if not self.debug:
             self.debug = self.log.level == logging.DEBUG
         self.subprotocol = subprotocol
 
-
-    def serialize(self, msg: dict[str, t.Any], **kwargs) -> list[bytes]:  # type:ignore[override,no-untyped-def]
+    def serialize(self, msg: dict[str, t.Any], **kwargs) -> list[bytes]:  # type: ignore[override,no-untyped-def]
         """Serialize the message components to bytes.
 
         This is roughly the inverse of deserialize. The serialize/deserialize
@@ -113,7 +120,7 @@ class WSSession(Session):
 
         return to_send
 
-    def deserialize(  # type:ignore[override,no-untyped-def]
+    def deserialize(  # type: ignore[override,no-untyped-def]
         self, msg_list: list[bytes], content: bool = True, **kwargs
     ) -> dict[str, t.Any]:
         """Deserialize a msg_list to a nested message dict.
@@ -158,7 +165,7 @@ class WSSession(Session):
         # adapt to the current version
         return adapt(message)
 
-    def send(  # type:ignore[override]
+    def send(  # type: ignore[override]
         self,
         stream: websocket.WebSocketApp,
         channel: str,
@@ -223,7 +230,7 @@ class WSSession(Session):
                 header=header,
                 metadata=metadata,
             )
-        msg['channel'] = channel
+        msg["channel"] = channel
 
         if self.check_pid and os.getpid() != self.pid:
             get_logger().warning("Attempted to send message from fork\n%s", msg)
@@ -252,16 +259,16 @@ class WSSession(Session):
         if self.subprotocol == JupyterSubprotocol.V1:
             stream.send_bytes(serialize_msg_to_ws_v1(to_send, channel))
         else:
-            # The Default protocol is a bytearray with a header pointing to 
+            # The Default protocol is a bytearray with a header pointing to
             # offsets where buffers are appended.
             #
             # Buffers are namely added for cases such as comm messages.
             # In the case of the common message without a buffers list, the
             # headers will always be '\x00\x00\x00\x01\x00\x00\x00\x08'.
-            # Since this is constant it might as well not be included, which is 
+            # Since this is constant it might as well not be included, which is
             # what Jupyter is doing with the default protocol.
             # [server code found here](https://github.com/jupyter-server/jupyter_server/blob/main/jupyter_server/services/kernels/connection/channels.py#L445-L464)
-            if 'buffers' in msg and len(msg['buffers']) > 0:
+            if "buffers" in msg and len(msg["buffers"]) > 0:
                 stream.send_bytes(serialize_msg_to_ws_default(msg))
             else:
                 stream.send_text(serialize_msg_to_ws_json(msg))
@@ -483,9 +490,7 @@ class KernelWebSocketClient(KernelClientABC):
 
     DEFAULT_INTERRUPT_WAIT = 1
 
-    
-
-    def __init__(  # type:ignore[no-untyped-def]
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         endpoint: str,
         token: str | None = None,
@@ -576,7 +581,7 @@ class KernelWebSocketClient(KernelClientABC):
         url = self.kernel_ws_endpoint
         params = {"session_id": self.session.session}
         if self.token is not None:
-            params['token'] = self.token
+            params["token"] = self.token
         url += "?" + urlencode(params)
         subprotocols = []
         if self._subprotocol == JupyterSubprotocol.V1:
@@ -787,7 +792,9 @@ class KernelWebSocketClient(KernelClientABC):
         self.shell_channel.send(msg)
         return msg["header"]["msg_id"]
 
-    def inspect(self, code: str, cursor_pos: int | None = None, detail_level: int = 0) -> str:
+    def inspect(
+        self, code: str, cursor_pos: int | None = None, detail_level: int = 0
+    ) -> str:
         """Get metadata information about an object in the kernel's namespace.
 
         It is up to the kernel to determine the appropriate object to inspect.
@@ -859,7 +866,9 @@ class KernelWebSocketClient(KernelClientABC):
         if hist_access_type == "range":
             kwargs.setdefault("session", 0)
             kwargs.setdefault("start", 0)
-        content = dict(raw=raw, output=output, hist_access_type=hist_access_type, **kwargs)
+        content = dict(
+            raw=raw, output=output, hist_access_type=hist_access_type, **kwargs
+        )
         msg = self.session.msg("history_request", content)
         self.shell_channel.send(msg)
         return msg["header"]["msg_id"]
@@ -893,7 +902,7 @@ class KernelWebSocketClient(KernelClientABC):
             return self._kernel_info
 
         self.wait_for_ready(timeout)
-        return self._kernel_info  # type:ignore[return-value]
+        return self._kernel_info  # type: ignore[return-value]
 
     def comm_info(self, target_name: str | None = None) -> str:
         """Request comm info
@@ -1185,9 +1194,7 @@ class KernelWebSocketClient(KernelClientABC):
         # before checking for kernel_info reply
         while not self.is_alive():
             if time.time() > abs_timeout:
-                message = (
-                    f"Kernel didn't respond to heartbeats in {timeout:d} seconds and timed out"
-                )
+                message = f"Kernel didn't respond to heartbeats in {timeout:d} seconds and timed out"
                 raise RuntimeError(message)
             time.sleep(0.2)
 
@@ -1242,7 +1249,9 @@ class KernelWebSocketClient(KernelClientABC):
         self.log.debug("Websocket connection is ready.")
         self.connection_ready.set()
 
-    def _on_close(self, _: websocket.WebSocket, close_status_code: t.Any, close_msg: t.Any) -> None:
+    def _on_close(
+        self, _: websocket.WebSocket, close_status_code: t.Any, close_msg: t.Any
+    ) -> None:
         msg = "Websocket connection is closed"
         if close_status_code or close_msg:
             self.log.info("%s: %s %s", msg, close_status_code, close_msg)
@@ -1253,7 +1262,7 @@ class KernelWebSocketClient(KernelClientABC):
     def _on_message(self, s: websocket.WebSocket, message: bytes) -> None:
         if self._subprotocol == JupyterSubprotocol.DEFAULT:
             deserialize_msg = deserialize_msg_from_ws_default(message)
-            channel = deserialize_msg['channel']
+            channel = deserialize_msg["channel"]
         elif self._subprotocol == JupyterSubprotocol.V1:
             channel, msg_list = deserialize_msg_from_ws_v1(message)
             deserialize_msg = self.session.deserialize(msg_list)
@@ -1315,7 +1324,7 @@ class KernelWebSocketClient(KernelClientABC):
         def double_int(sig, frame):
             # call real handler (forwards sigint to kernel),
             # then raise local interrupt, stopping local raw_input
-            real_handler(sig, frame)  # type:ignore[operator,misc]
+            real_handler(sig, frame)  # type: ignore[operator,misc]
             raise KeyboardInterrupt
 
         signal.signal(signal.SIGINT, double_int)

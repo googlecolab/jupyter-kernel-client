@@ -1,4 +1,3 @@
-
 # Copyright (c) 2023-2024 Datalayer, Inc.
 # Copyright (c) 2025      Google
 #
@@ -28,6 +27,7 @@ def test_list_kernels(jupyter_server):
             assert "name" in k
             if k["id"] == kernel_id:
                 found = True
-        
-        assert found, f"Kernel with id {kernel_id} not found in the list of running kernels."
 
+        assert (
+            found
+        ), f"Kernel with id {kernel_id} not found in the list of running kernels."

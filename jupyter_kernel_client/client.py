@@ -21,7 +21,9 @@ from jupyter_kernel_client.snippets import SNIPPETS_REGISTRY
 from jupyter_kernel_client.utils import UTC
 
 
-def output_hook(outputs: list[dict[str, t.Any]], message: dict[str, t.Any]) -> set[int]:  # noqa: C901
+def output_hook(
+    outputs: list[dict[str, t.Any]], message: dict[str, t.Any]
+) -> set[int]:  # noqa: C901
     """Callback on messages captured during a code snippet execution.
 
     The return list of updated output will be empty if no output where changed.
@@ -163,7 +165,9 @@ class KernelClient(LoggingConfigurable):
         self, kernel_id: str | None = None, log: logging.Logger | None = None, **kwargs
     ) -> None:
         super().__init__(log=log or get_logger())
-        self._manager = self.kernel_manager_class(parent=self, kernel_id=kernel_id, **kwargs)
+        self._manager = self.kernel_manager_class(
+            parent=self, kernel_id=kernel_id, **kwargs
+        )
         # Set it after the manager as if a kernel_id is provided,
         # we will try to connect to it.
         self._own_kernel = self._manager.kernel is None
@@ -456,7 +460,8 @@ class KernelClient(LoggingConfigurable):
         """
         kernel_language = (self.kernel_info or {}).get("language_info", {}).get("name")
         if kernel_language not in SNIPPETS_REGISTRY.available_languages:
-            raise ValueError(f"""Code snippet for language {kernel_language} are not available.
+            raise ValueError(
+                f"""Code snippet for language {kernel_language} are not available.
 You can set them yourself using:
 
     from jupyter_kernel_client import SNIPPETS_REGISTRY, LanguageSnippets
@@ -469,10 +474,13 @@ You can set them yourself using:
             get_variable_mimetypes="",
         )
     )
-""")
+"""
+            )
         snippet = SNIPPETS_REGISTRY.get_set_variable(kernel_language)
         data, metadata = serialize_object(value)
-        results = self.execute(snippet.format(name=name, data=data, metadata=metadata), silent=True)
+        results = self.execute(
+            snippet.format(name=name, data=data, metadata=metadata), silent=True
+        )
         self.log.debug("Set variables: %s", results)
         if results["status"] == "ok":
             pass
@@ -496,7 +504,8 @@ You can set them yourself using:
         """
         kernel_language = (self.kernel_info or {}).get("language_info", {}).get("name")
         if kernel_language not in SNIPPETS_REGISTRY.available_languages:
-            raise ValueError(f"""Code snippet for language {kernel_language} are not available.
+            raise ValueError(
+                f"""Code snippet for language {kernel_language} are not available.
 You can set them yourself using:
 
     from jupyter_kernel_client import SNIPPETS_REGISTRY, LanguageSnippets
@@ -509,7 +518,8 @@ You can set them yourself using:
             get_variable_mimetypes="",
         )
     )
-""")
+"""
+            )
 
         snippet = SNIPPETS_REGISTRY.get_get_variable(kernel_language)
         results = self.execute(snippet.format(name=name), silent=True)
@@ -536,7 +546,8 @@ You can set them yourself using:
         """
         kernel_language = (self.kernel_info or {}).get("language_info", {}).get("name")
         if kernel_language not in SNIPPETS_REGISTRY.available_languages:
-            raise ValueError(f"""Code snippet for language {kernel_language} are not available.
+            raise ValueError(
+                f"""Code snippet for language {kernel_language} are not available.
 You can set them yourself using:
 
     from jupyter_kernel_client import SNIPPETS_REGISTRY, LanguageSnippets
@@ -549,7 +560,8 @@ You can set them yourself using:
             get_variable_mimetypes="",
         )
     )
-""")
+"""
+            )
 
         snippet = SNIPPETS_REGISTRY.get_list_variables(kernel_language)
         results = self.execute(snippet, silent=True)
@@ -592,21 +604,27 @@ You can set them yourself using:
         """
         kernel_language = (self.kernel_info or {}).get("language_info", {}).get("name")
         if kernel_language not in SNIPPETS_REGISTRY.available_languages:
-            raise ValueError(f"""Code snippet for language {kernel_language} are not available.
+            raise ValueError(
+                f"""Code snippet for language {kernel_language} are not available.
 You can set them yourself using:
 
     from jupyter_kernel_client import SNIPPETS_REGISTRY, LanguageSnippets
     SNIPPETS_REGISTRY.register("my-language", LanguageSnippets(list_variables="", get_variable=""))
-""")
+"""
+            )
 
         snippet = SNIPPETS_REGISTRY.get_get_variable_mimetypes(kernel_language)
-        results = self.execute(snippet.format(name=name, mimetype=mimetype), silent=True)
+        results = self.execute(
+            snippet.format(name=name, mimetype=mimetype), silent=True
+        )
 
         self.log.debug("Kernel variables: %s", results)
 
         if results["status"] == "ok" and results["outputs"]:
             if mimetype is None:
-                return results["outputs"][0]["data"], results["outputs"][0].get("metadata", {})
+                return results["outputs"][0]["data"], results["outputs"][0].get(
+                    "metadata", {}
+                )
             else:
 
                 def filter_dict(d: dict, mimetype: str) -> dict:

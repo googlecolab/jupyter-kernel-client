@@ -87,7 +87,9 @@ class SnippetsRegistry:
             snippets: Language snippets
         """
         if language in self._snippets:
-            warnings.warn(f"Snippets for language {language} will be overridden.", stacklevel=2)
+            warnings.warn(
+                f"Snippets for language {language} will be overridden.", stacklevel=2
+            )
         self._snippets[language] = snippets
 
     def get_list_variables(self, language: str) -> str:

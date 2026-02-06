@@ -34,7 +34,7 @@ def fetch(
     headers = {
         "Accept": "application/json",
         "Content-Type": "application/json",
-        "User-Agent": "Jupyter Kernel Client"
+        "User-Agent": "Jupyter Kernel Client",
     }
     headers.update(kwargs.pop("headers", {}))
     if token:
@@ -88,15 +88,17 @@ class KernelHttpManager(LoggingConfigurable):
         else:
             self.__extra_headers = {}
 
-        if 'headers' not in self.__client_kwargs:
-            self.__client_kwargs['headers'] = {}
-        self.__client_kwargs['headers'].update(self.__extra_headers)
+        if "headers" not in self.__client_kwargs:
+            self.__client_kwargs["headers"] = {}
+        self.__client_kwargs["headers"].update(self.__extra_headers)
 
         if kernel_id:
             self.__kernel = {
                 "id": kernel_id,
                 "execution_state": "unknown",
-                "last_activity": datetime.datetime.strftime(utcnow(), "%Y-%m-%dT%H:%M:%S.%fZ"),
+                "last_activity": datetime.datetime.strftime(
+                    utcnow(), "%Y-%m-%dT%H:%M:%S.%fZ"
+                ),
             }
             self.refresh_model()
 
@@ -118,7 +120,9 @@ class KernelHttpManager(LoggingConfigurable):
         else:
             return None
 
-    client_class = DottedObjectName("jupyter_kernel_client.wsclient.KernelWebSocketClient")
+    client_class = DottedObjectName(
+        "jupyter_kernel_client.wsclient.KernelWebSocketClient"
+    )
     client_factory = Type(klass="jupyter_client.client.KernelClientABC")
 
     @default("client_factory")
@@ -137,7 +141,9 @@ class KernelHttpManager(LoggingConfigurable):
     def client(self) -> t.Any:
         """Create a client configured to connect to our kernel."""
         if not self.kernel_url:
-            raise RuntimeError("You must first start a kernel before requesting a client.")
+            raise RuntimeError(
+                "You must first start a kernel before requesting a client."
+            )
 
         if not self.__client:
             base_ws_url = HTTP_PROTOCOL_REGEXP.sub("ws", self.kernel_url, 1)
@@ -156,7 +162,9 @@ class KernelHttpManager(LoggingConfigurable):
 
         return self.__client
 
-    def refresh_model(self, timeout: float = REQUEST_TIMEOUT) -> dict[str, t.Any] | None:
+    def refresh_model(
+        self, timeout: float = REQUEST_TIMEOUT
+    ) -> dict[str, t.Any] | None:
         """Refresh the kernel model.
 
         Returns
@@ -173,7 +181,13 @@ class KernelHttpManager(LoggingConfigurable):
 
         self.log.debug("Request kernel at: %s", self.kernel_url)
         try:
-            response = fetch(self.kernel_url, token=self.token, method="GET", timeout=timeout, headers=self.__extra_headers)
+            response = fetch(
+                self.kernel_url,
+                token=self.token,
+                method="GET",
+                timeout=timeout,
+                headers=self.__extra_headers,
+            )
         except HTTPError as error:
             if error.response.status_code == 404:
                 self.log.warning("Kernel not found at: %s", self.kernel_url)
@@ -200,7 +214,13 @@ class KernelHttpManager(LoggingConfigurable):
         kernels_url = url_path_join(self.server_url, "api/kernels")
         self.log.debug("Request kernels at: %s", kernels_url)
         try:
-            response = fetch(kernels_url, token=self.token, method="GET", timeout=timeout, headers=self.__extra_headers)
+            response = fetch(
+                kernels_url,
+                token=self.token,
+                method="GET",
+                timeout=timeout,
+                headers=self.__extra_headers,
+            )
         except HTTPError as error:
             self.log.error("Error fetching kernels: %s", error)
             return []
@@ -208,7 +228,6 @@ class KernelHttpManager(LoggingConfigurable):
             models = response.json()
         self.log.debug("Kernels retrieved: %s", models)
         return models
-
 
     # --------------------------------------------------------------------------
     # Kernel management
@@ -241,7 +260,7 @@ class KernelHttpManager(LoggingConfigurable):
             method="POST",
             json={"name": name, "path": path},
             timeout=timeout,
-            headers=self.__extra_headers
+            headers=self.__extra_headers,
         )
 
         self.__kernel = response.json()
@@ -256,7 +275,9 @@ class KernelHttpManager(LoggingConfigurable):
     ):
         """Attempts to stop the kernel process cleanly via HTTP."""
         if not self.kernel_url:
-            raise RuntimeError("You must first start a kernel before requesting a client.")
+            raise RuntimeError(
+                "You must first start a kernel before requesting a client."
+            )
 
         self.log.debug("Request shutdown kernel at: %s", self.kernel_url)
         if not now:
@@ -271,7 +292,13 @@ class KernelHttpManager(LoggingConfigurable):
 
         # If not now and refreshing the model still returns it, try the http way
         try:
-            response = fetch(self.kernel_url, token=self.token, method="DELETE", timeout=timeout, headers=self.__extra_headers)
+            response = fetch(
+                self.kernel_url,
+                token=self.token,
+                method="DELETE",
+                timeout=timeout,
+                headers=self.__extra_headers,
+            )
             self.log.debug(
                 "Shutdown kernel response: %d %s",
                 response.status_code,
@@ -291,17 +318,29 @@ class KernelHttpManager(LoggingConfigurable):
     def restart_kernel(self, timeout: float = REQUEST_TIMEOUT, **kw):
         """Restarts a kernel via HTTP request."""
         if not self.kernel_url:
-            raise RuntimeError("You must first start a kernel before requesting a client.")
+            raise RuntimeError(
+                "You must first start a kernel before requesting a client."
+            )
 
         kernel_url = self.kernel_url + "/restart"
         self.log.debug("Request restart kernel at: %s", kernel_url)
-        response = fetch(kernel_url, token=self.token, method="POST", timeout=timeout, headers=self.__extra_headers)
-        self.log.debug("Restart kernel response: %d %s", response.status_code, response.reason)
+        response = fetch(
+            kernel_url,
+            token=self.token,
+            method="POST",
+            timeout=timeout,
+            headers=self.__extra_headers,
+        )
+        self.log.debug(
+            "Restart kernel response: %d %s", response.status_code, response.reason
+        )
 
     def interrupt_kernel(self, timeout: float = REQUEST_TIMEOUT):
         """Interrupts the kernel via an HTTP request."""
         if not self.kernel_url:
-            raise RuntimeError("You must first start a kernel before requesting a client.")
+            raise RuntimeError(
+                "You must first start a kernel before requesting a client."
+            )
 
         kernel_url = self.kernel_url + "/interrupt"
         self.log.debug("Request interrupt kernel at: %s", kernel_url)
@@ -310,7 +349,7 @@ class KernelHttpManager(LoggingConfigurable):
             token=self.token,
             method="POST",
             timeout=timeout,
-            headers=self.__extra_headers
+            headers=self.__extra_headers,
         )
         self.log.debug(
             "Interrupt kernel response: %d %s",

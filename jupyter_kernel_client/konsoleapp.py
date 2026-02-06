@@ -107,7 +107,9 @@ class KonsoleApp(JupyterApp):
 
     subcommands = Dict()
 
-    server_url = Unicode("http://localhost:8888", config=True, help="URL to the Jupyter Server.")
+    server_url = Unicode(
+        "http://localhost:8888", config=True, help="URL to the Jupyter Server."
+    )
 
     # FIXME it does not support password
     token = Unicode("", config=True, help="Jupyter Server token.")
@@ -126,10 +128,14 @@ class KonsoleApp(JupyterApp):
 
     existing = CUnicode("", config=True, help="""Existing kernel ID to connect to.""")
 
-    kernel_name = Unicode("python3", config=True, help="""The name of the kernel to connect to.""")
+    kernel_name = Unicode(
+        "python3", config=True, help="""The name of the kernel to connect to."""
+    )
 
     kernel_path = Unicode(
-        "", config=True, help="API path from server root to the kernel working directory."
+        "",
+        config=True,
+        help="API path from server root to the kernel working directory.",
     )
 
     confirm_exit = CBool(
@@ -198,7 +204,9 @@ class KonsoleApp(JupyterApp):
         )
 
         if not self.existing:
-            self.kernel_client.start_kernel(name=self.kernel_name, path=self.kernel_path)
+            self.kernel_client.start_kernel(
+                name=self.kernel_name, path=self.kernel_path
+            )
         elif self.kernel_client.kernel is None:
             msg = f"Unable to connect to kernel with ID {self.existing}."
             raise RuntimeError(msg)
