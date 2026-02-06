@@ -17,12 +17,10 @@ def test_execution_as_context_manager(jupyter_server):
     port, token = jupyter_server
 
     with KernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
-        reply = kernel.execute(
-            """import os
+        reply = kernel.execute("""import os
 from platform import node
 print(f"Hey {os.environ.get('USER', 'John Smith')} from {node()}.")
-"""
-        )
+""")
 
         assert reply["execution_count"] == 1
         assert reply["outputs"] == [
@@ -41,12 +39,10 @@ def test_execution_no_context_manager(jupyter_server):
     kernel = KernelClient(server_url=f"http://localhost:{port}", token=token)
     kernel.start()
     try:
-        reply = kernel.execute(
-            """import os
+        reply = kernel.execute("""import os
 from platform import node
 print(f"Hey {os.environ.get('USER', 'John Smith')} from {node()}.")
-"""
-        )
+""")
     finally:
         kernel.stop()
 
@@ -69,7 +65,9 @@ def test_list_kernels_client(jupyter_server):
         kernel_id = kernel.id
 
         # Use a new client to list the kernels
-        listing_client = KernelClient(server_url=f"http://localhost:{port}", token=token)
+        listing_client = KernelClient(
+            server_url=f"http://localhost:{port}", token=token
+        )
         kernels = listing_client.list_kernels()
 
         assert isinstance(kernels, list)
@@ -83,34 +81,26 @@ def test_list_kernels_client(jupyter_server):
             if k["id"] == kernel_id:
                 found = True
 
-        assert found, f"Kernel with id {kernel_id} not found in the list of running kernels."
+        assert (
+            found
+        ), f"Kernel with id {kernel_id} not found in the list of running kernels."
 
 
 def test_list_variables(jupyter_server):
     port, token = jupyter_server
 
     with KernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
-        kernel.execute(
-            """a = 1.0
+        kernel.execute("""a = 1.0
 b = "hello the world"
 c = {3, 4, 5}
 d = {"name": "titi"}
-"""
-        )
+""")
 
         variables = kernel.list_variables()
 
     assert variables == [
-        VariableDescription(
-            name="a",
-            type=["builtins", "float"],
-            size=None
-        ),
-        VariableDescription(
-            name="b",
-            type=["builtins", "str"],
-            size=None
-        ),
+        VariableDescription(name="a", type=["builtins", "float"], size=None),
+        VariableDescription(name="b", type=["builtins", "str"], size=None),
         VariableDescription(
             name="c",
             type=["builtins", "set"],
@@ -169,7 +159,16 @@ def test_get_textplain_variables(jupyter_server, variable, set_variable, expecte
     (
         ("lst", [1, 2, 3, 4]),
         ("arr", np.random.randn(100000)),
-        ("df", pd.DataFrame({'values': np.random.randn(1000), 'categories': np.random.choice(['A', 'B', 'C'], 1000), 'integers': np.random.randint(1, 100, 1000)})),
+        (
+            "df",
+            pd.DataFrame(
+                {
+                    "values": np.random.randn(1000),
+                    "categories": np.random.choice(["A", "B", "C"], 1000),
+                    "integers": np.random.randint(1, 100, 1000),
+                }
+            ),
+        ),
         ("s", pd.Series(np.random.randn(100000))),
     ),
 )
@@ -201,7 +200,7 @@ def test_set_variables_on_execute(jupyter_server, variable, value):
     port, token = jupyter_server
     variables = {variable: value}
     with KernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
-        reply = kernel.execute(f'print({variable})', variables=variables)
+        reply = kernel.execute(f"print({variable})", variables=variables)
         assert reply["execution_count"] == 1
         assert reply["outputs"] == [
             {
@@ -237,7 +236,7 @@ def test_set_variables(jupyter_server, variable, set_variable, expected):
 async def test_multi_execution_in_event_loop(jupyter_server):
     port, token = jupyter_server
 
-    current_user = os.environ.get('USER', 'John Smith')
+    current_user = os.environ.get("USER", "John Smith")
     current_node = node()
 
     with KernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
@@ -249,13 +248,13 @@ from platform import node
 import time
 time.sleep(5)
 print(f"Hey {{os.environ.get('USER', 'John Smith')}} from {{node()}}.")
-"""
+""",
             ),
             asyncio.to_thread(
                 kernel.execute,
                 """import time
 time.sleep(1)
-print("Hello")"""
+print("Hello")""",
             ),
         )
 

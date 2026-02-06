@@ -46,10 +46,13 @@ def deserialize_msg_from_ws_v1(ws_msg):
     """Deserialize a message using the v1 protocol."""
     offset_number = int.from_bytes(ws_msg[:8], "little")
     offsets = [
-        int.from_bytes(ws_msg[8 * (i + 1) : 8 * (i + 2)], "little") for i in range(offset_number)
+        int.from_bytes(ws_msg[8 * (i + 1) : 8 * (i + 2)], "little")
+        for i in range(offset_number)
     ]
     channel = ws_msg[offsets[0] : offsets[1]].decode("utf-8")
-    msg_list = [ws_msg[offsets[i] : offsets[i + 1]] for i in range(1, offset_number - 1)]
+    msg_list = [
+        ws_msg[offsets[i] : offsets[i + 1]] for i in range(1, offset_number - 1)
+    ]
     return channel, msg_list
 
 
@@ -59,7 +62,7 @@ def serialize_msg_to_ws_default(msg):
     buffers = []
 
     msg_copy = dict(msg)
-    msg_copy['header']['date'] = str(msg_copy['header']['date'])
+    msg_copy["header"]["date"] = str(msg_copy["header"]["date"])
     orig_buffers = msg_copy.pop("buffers", [])
     json_bytes = json.dumps(msg_copy).encode("utf-8")
     buffers.append(json_bytes)
@@ -80,11 +83,11 @@ def serialize_msg_to_ws_default(msg):
 
     for i, off in enumerate(offsets):
         start = 4 * (i + 1)
-        msg_buf[start:start+4] = off.to_bytes(4, byteorder="big")
+        msg_buf[start : start + 4] = off.to_bytes(4, byteorder="big")
 
     for i, b in enumerate(buffers):
         start = offsets[i]
-        msg_buf[start:start+len(b)] = b
+        msg_buf[start : start + len(b)] = b
 
     return bytes(msg_buf)
 
@@ -92,7 +95,7 @@ def serialize_msg_to_ws_default(msg):
 def deserialize_msg_from_ws_default(ws_msg):
     """Deserialize a message using the default protocol."""
     if isinstance(ws_msg, str):
-        return json.loads(ws_msg.encode('utf-8'))
+        return json.loads(ws_msg.encode("utf-8"))
     else:
         nbufs = int.from_bytes(ws_msg[:4], byteorder="big")
         offsets = []
@@ -101,7 +104,7 @@ def deserialize_msg_from_ws_default(ws_msg):
 
         for i in range(nbufs):
             start = 4 * (i + 1)
-            off = int.from_bytes(ws_msg[start:start+4], byteorder="big")
+            off = int.from_bytes(ws_msg[start : start + 4], byteorder="big")
             offsets.append(off)
 
         json_start = offsets[0]
@@ -115,7 +118,7 @@ def deserialize_msg_from_ws_default(ws_msg):
         msg["buffers"] = []
         for i in range(1, nbufs):
             start = offsets[i]
-            stop = offsets[i+1] if (i+1) < len(offsets) else len(ws_msg)
+            stop = offsets[i + 1] if (i + 1) < len(offsets) else len(ws_msg)
 
             if not (0 <= start <= stop <= len(ws_msg)):
                 raise ValueError(f"Invalid buffer offsets for chunk {i}")
@@ -124,9 +127,11 @@ def deserialize_msg_from_ws_default(ws_msg):
 
         return msg
 
+
 def serialize_msg_to_ws_json(msg):
     """Serialize a default protocol with no buffers."""
     return json.dumps(msg, default=str)
+
 
 def url_path_join(*pieces: str) -> str:
     """Join components of url into a relative url
@@ -168,4 +173,4 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
-UTC = tzUTC()  # type:ignore[abstract]
+UTC = tzUTC()  # type: ignore[abstract]
